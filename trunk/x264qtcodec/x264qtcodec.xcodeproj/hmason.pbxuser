@@ -1,0 +1,148 @@
+// !$*UTF8*$!
+{
+	089C1669FE841209C02AAC07 /* Project object */ = {
+		activeBuildConfigurationName = Development;
+		activeBuildStyle = 4F9091AC011F3BD104CA0E50 /* Development */;
+		activeTarget = 8D01CCC60486CAD60068D4B7 /* x264qtcodec */;
+		addToTargets = (
+			8D01CCC60486CAD60068D4B7 /* x264qtcodec */,
+		);
+		breakpoints = (
+		);
+		codeSenseManager = 75AF88310963A29700A43000 /* Code sense */;
+		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					194,
+					20,
+					48,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
+			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					200,
+					14,
+					20,
+					48,
+					43,
+					43,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXTargetDataSource_PrimaryAttribute,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+				);
+			};
+			PBXPerProjectTemplateStateSaveDate = 157615837;
+			PBXWorkspaceStateSaveDate = 157615837;
+		};
+		perUserProjectItems = {
+			75AF8C5E0965D12200A43000 /* PBXBookmark */ = 75AF8C5E0965D12200A43000 /* PBXBookmark */;
+			75AF8D730966F15100A43000 /* PBXTextBookmark */ = 75AF8D730966F15100A43000 /* PBXTextBookmark */;
+		};
+		sourceControlManager = 75AF88300963A29700A43000 /* Source Control */;
+		userBuildSettings = {
+		};
+	};
+	75AF88300963A29700A43000 /* Source Control */ = {
+		isa = PBXSourceControlManager;
+		fallbackIsa = XCSourceControlManager;
+		isSCMEnabled = 0;
+		scmConfiguration = {
+		};
+		scmType = "";
+	};
+	75AF88310963A29700A43000 /* Code sense */ = {
+		isa = PBXCodeSenseManager;
+		indexTemplatePath = "";
+	};
+	75AF88330963A2A500A43000 /* x264Compressor.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1046, 12698}}";
+			sepNavSelRange = "{30486, 0}";
+			sepNavVisRect = "{{0, 2008}, {716, 203}}";
+		};
+	};
+	75AF883E0963A31700A43000 /* x264.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {955, 5404}}";
+			sepNavSelRange = "{3514, 13}";
+			sepNavVisRect = "{{0, 910}, {955, 575}}";
+			sepNavWindowFrame = "{{200, 53}, {994, 648}}";
+		};
+	};
+	75AF89A809648FC200A43000 /* ExampleIPBCodecUniversal.r */ = {
+		isa = PBXFileReference;
+		lastKnownFileType = sourcecode.rez;
+		name = ExampleIPBCodecUniversal.r;
+		path = /Users/hmason/Downloads/ExampleIPBCodec/ExampleIPBCodecUniversal.r;
+		sourceTree = "<absolute>";
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {955, 3934}}";
+			sepNavSelRange = "{7856, 195}";
+			sepNavVisRect = "{{0, 993}, {955, 575}}";
+			sepNavWindowFrame = "{{73, 75}, {994, 648}}";
+		};
+	};
+	75AF8BAA0965CB8700A43000 /* x264Compressor.r */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {908, 1904}}";
+			sepNavSelRange = "{254, 7}";
+			sepNavVisRect = "{{0, 159}, {716, 203}}";
+			sepNavWindowFrame = "{{214, 85}, {994, 648}}";
+		};
+	};
+	75AF8BF30965CDDD00A43000 /* x264Compressor.exp */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {955, 575}}";
+			sepNavSelRange = "{1, 0}";
+			sepNavVisRect = "{{0, 0}, {955, 575}}";
+			sepNavWindowFrame = "{{62, 179}, {994, 648}}";
+		};
+	};
+	75AF8C5E0965D12200A43000 /* PBXBookmark */ = {
+		isa = PBXBookmark;
+		fRef = 75AF89A809648FC200A43000 /* ExampleIPBCodecUniversal.r */;
+	};
+	75AF8D730966F15100A43000 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 75AF8D740966F15100A43000 /* ExampleIPBCodecUniversal.r */;
+		name = "(null): 272";
+		rLen = 195;
+		rLoc = 7856;
+		rType = 0;
+		vrLen = 984;
+		vrLoc = 2632;
+	};
+	75AF8D740966F15100A43000 /* ExampleIPBCodecUniversal.r */ = {
+		isa = PBXFileReference;
+		name = ExampleIPBCodecUniversal.r;
+		path = /Users/hmason/Downloads/ExampleIPBCodec/ExampleIPBCodecUniversal.r;
+		sourceTree = "<absolute>";
+	};
+	8D01CCC60486CAD60068D4B7 /* x264qtcodec */ = {
+		activeExec = 0;
+	};
+}
