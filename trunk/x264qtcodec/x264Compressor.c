@@ -17,6 +17,9 @@
 
 #include "x264.h"
 
+#import <sys/types.h>
+#import <sys/sysctl.h>
+
 typedef struct x264_compressor_globals_struct
 {
 	ComponentInstance 	self;
@@ -31,6 +34,7 @@ typedef struct x264_compressor_globals_struct
     x264_param_t    params;
     x264_picture_t  source_picture;
     Boolean         source_picture_allocated;
+	Boolean			emit_frames;
 
     CFStringRef     stat_file_path;
 	
@@ -89,7 +93,7 @@ static void copy_2vuy_to_planar_YUV420(size_t width, size_t height,
 	UInt8 *lineBase_u = baseAddr_u;
 	UInt8 *lineBase_v = baseAddr_v;
 	for (y = 0; y < height; y += 2) {
-		// Take two lines at a time and average the U and V samples.
+		/* Take two lines at a time and average the U and V samples. */
 		const UInt8 *pixelPtr_2vuy_top = lineBase_2vuy;
 		const UInt8 *pixelPtr_2vuy_bot = lineBase_2vuy + rowBytes_2vuy;
 		UInt8 *pixelPtr_y_top = lineBase_y;
@@ -97,15 +101,15 @@ static void copy_2vuy_to_planar_YUV420(size_t width, size_t height,
 		UInt8 *pixelPtr_u = lineBase_u;
 		UInt8 *pixelPtr_v = lineBase_v;
 		for (x = 0; x < width; x += 2) {
-			// 2vuy contains samples clustered Cb, Y0, Cr, Y1.  
-			// Convert a 2x2 block of pixels from two 2vuy pixel blocks to 4 separate Y samples, 1 U and 1 V.
+			/* 2vuy contains samples clustered Cb, Y0, Cr, Y1.  */
+			/* Convert a 2x2 block of pixels from two 2vuy pixel blocks to 4 separate Y samples, 1 U and 1 V. */
 			pixelPtr_y_top[0] = pixelPtr_2vuy_top[1];
 			pixelPtr_y_top[1] = pixelPtr_2vuy_top[3];
 			pixelPtr_y_bot[0] = pixelPtr_2vuy_bot[1];
 			pixelPtr_y_bot[1] = pixelPtr_2vuy_bot[3];
 			pixelPtr_u[0] = ( pixelPtr_2vuy_top[0] + pixelPtr_2vuy_bot[0] ) / 2;
 			pixelPtr_v[0] = ( pixelPtr_2vuy_top[2] + pixelPtr_2vuy_bot[2] ) / 2;
-			// Advance to the next 2x2 block of pixels.
+			/* Advance to the next 2x2 block of pixels. */
 			pixelPtr_2vuy_top += 4;
 			pixelPtr_2vuy_bot += 4;
 			pixelPtr_y_top += 2;
@@ -288,6 +292,8 @@ static CFStringRef create_temp_file_path()
 ComponentResult x264_compressor_Open(x264_compressor_globals_t *glob, ComponentInstance self)
 {
 	CFStringRef temp_file_path;
+    int	mib[2];
+    size_t len;
 	
 	glob = calloc(sizeof(x264_compressor_globals_t), 1);
 	if (!glob)
@@ -303,8 +309,17 @@ ComponentResult x264_compressor_Open(x264_compressor_globals_t *glob, ComponentI
     glob->params.i_bframe = 2;
     glob->params.b_bframe_adaptive = TRUE;
     glob->params.analyse.b_chroma_me = TRUE;
+	glob->params.analyse.b_psnr = FALSE;
 	glob->params.b_cabac = FALSE;
+	
+	/* Get the CPU count via sysctl */
+    mib[0] = CTL_HW;
+    mib[1] = HW_AVAILCPU;
+	len = sizeof(glob->params.i_threads);
+    sysctl(mib, 2, &glob->params.i_threads, &len, NULL, 0);
     
+    glob->encoder = NULL;
+
 	temp_file_path = create_temp_file_path();
 
     glob->params.rc.psz_stat_out = malloc(STAT_FILE_PATH_BUFFER_SIZE);
@@ -608,13 +623,16 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
 	OSType pixel_format = k422YpCbCr8CodecType;
     SInt32 data_rate;
 	CodecQ quality;
+	Fixed frame_rate;
     x264_nal_t *nal;
+	x264_t	*temp_encoder;
 	UInt8 *avcC_buffer;
 	size_t avcC_buffer_size, avcC_buffer_alloc_size;
     Handle avcC_handle;
     unsigned int i, nal_i;
     unsigned int sps_count, *sps_indexes;
     unsigned int pps_count, *pps_indexes;
+	int b_stat_write_old;
 	
 	/* store the session */
 	glob->session = session;
@@ -633,16 +651,29 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
 										 &gamma_level);
 	if (err) return err;
 	
+	CFStringGetPascalString(CFSTR("H.264 (x264)"), (*image_description)->name, sizeof(Str31), kCFStringEncodingUTF8);
+	
     glob->params.i_width = (*image_description)->width;
     glob->params.i_height = (*image_description)->height;
 	glob->params.i_keyint_max = ICMCompressionSessionOptionsGetMaxKeyFrameInterval(glob->session_options);
 	
-	err =  ICMCompressionSessionOptionsGetProperty(glob->session_options, 
+	err = ICMCompressionSessionOptionsGetProperty(glob->session_options, 
                                                   kQTPropertyClass_ICMCompressionSessionOptions,
                                                   kICMCompressionSessionOptionsPropertyID_Quality,
                                                   sizeof(quality), &quality, NULL);
     if (err) return err;
 	glob->params.rc.i_qp_constant = (51 - ((quality * 51) / codecLosslessQuality));
+	
+	err = ICMCompressionSessionOptionsGetProperty(glob->session_options, 
+                                                  kQTPropertyClass_ICMCompressionSessionOptions,
+                                                  kICMCompressionSessionOptionsPropertyID_ExpectedFrameRate,
+                                                  sizeof(frame_rate), &frame_rate, NULL);
+    if (err) return err;
+
+	if (frame_rate > 0) {
+		glob->params.i_fps_num = frame_rate << 16;
+		glob->params.i_fps_den = 65536;	
+	}
 	
 	err = ICMCompressionSessionOptionsGetProperty(glob->session_options, 
                                                   kQTPropertyClass_ICMCompressionSessionOptions,
@@ -657,6 +688,8 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
 		glob->params.rc.b_cbr = FALSE;
 
 	glob->params.pf_log = x264_compress_log;
+	
+	glob->emit_frames = TRUE;
 	
 	/* create a pixel buffer attributes dictionary */
 	pixel_buffer_attributes = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
@@ -684,10 +717,14 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
     x264_picture_alloc(&glob->source_picture, X264_CSP_I420, glob->params.i_width, glob->params.i_height);
     glob->source_picture_allocated = TRUE;
 
-	/* need to briefly open an encoder in order to get the SPS/PPS */  
-    glob->encoder = x264_encoder_open(&glob->params);
+	/* don't want temp encoder to overwrite our log file */
+	b_stat_write_old = glob->params.rc.b_stat_write;
+	glob->params.rc.b_stat_write = FALSE;
 	
-    x264_encoder_headers(glob->encoder, &nal, &nal_i);
+	/* need to briefly open an encoder in order to get the SPS/PPS */  
+    temp_encoder = x264_encoder_open(&glob->params);
+	
+    x264_encoder_headers(temp_encoder, &nal, &nal_i);
 
  	sps_count = 0;
 	sps_indexes = malloc(nal_i * sizeof(int));
@@ -818,9 +855,20 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
 	free(pps_indexes);
 	
 	/* Need to close the encoder so it can be re-opened with the correct pass properties. */
-/*    x264_encoder_close(glob->encoder);
-    glob->encoder = NULL;
-*/	
+    x264_encoder_close(temp_encoder);
+	
+	if (glob->encoder) {
+		x264_encoder_close(glob->encoder);
+    	glob->encoder = NULL;
+	}
+
+	/* reset stat writing to what it used to be. */
+	glob->params.rc.b_stat_write = b_stat_write_old;
+	
+	glob->total_duration = 0;
+	glob->time_scale = 0;
+	glob->total_frame_count = 0;
+
 	return err;
 }
 
@@ -836,6 +884,15 @@ ComponentResult x264_compressor_EncodeFrame(x264_compressor_globals_t *glob, ICM
     x264_picture_t picture_out;
     unsigned int nal_count;
 
+	if (glob->encoder == NULL) {
+		glob->encoder = x264_encoder_open(&glob->params);
+	}
+	
+	if (glob->encoder == NULL) {
+		fprintf(stderr, "%s: [ERROR] could not open encoder, bailing\n", __FUNCTION__);
+		return paramErr;
+	}
+
     if (!source_frame)  return err;
 	
     pixel_buffer = ICMCompressorSourceFrameGetPixelBuffer(source_frame);
@@ -850,6 +907,12 @@ ComponentResult x264_compressor_EncodeFrame(x264_compressor_globals_t *glob, ICM
 
 	err = ICMCompressorSourceFrameGetDisplayTimeStampAndDuration(source_frame, NULL, &display_duration, &glob->time_scale, NULL);
 	if (err) return err;
+	
+	if ((display_duration != glob->params.i_fps_den) || (glob->time_scale != glob->params.i_fps_num)) {
+		glob->params.i_fps_num = glob->time_scale;
+		glob->params.i_fps_den = display_duration;
+		x264_encoder_reconfig(glob->encoder, &glob->params);
+	}
 	
     glob->total_duration += display_duration;
     glob->total_frame_count += 1;
@@ -882,7 +945,7 @@ ComponentResult x264_compressor_EncodeFrame(x264_compressor_globals_t *glob, ICM
 	err = x264_encoder_encode(glob->encoder, &nal, &nal_count, &glob->source_picture, &picture_out);
 	if (err < 0)	return err;
 	
-	if (nal_count) {
+	if ((glob->emit_frames) && (nal_count)) {
 		err = emit_frame_from_nal(glob, nal, nal_count, &picture_out);
 		if (err) return err;
 	}
@@ -918,9 +981,41 @@ ComponentResult x264_compressor_CompleteFrame(x264_compressor_globals_t *glob, I
 			return err;
         }
         
-		if (nal_count) err = emit_frame_from_nal(glob, nal, nal_count, &picture);
-		if (err) return err;
+		if ((glob->emit_frames) && (nal_count)) {
+			err = emit_frame_from_nal(glob, nal, nal_count, &picture);
+			if (err) return err;
+		}
     }
 
 	return err;
+}
+
+ComponentResult x264_compressor_BeginPass (x264_compressor_globals_t *glob, ICMCompressionPassModeFlags pass_mode_flags, UInt32 flags, ICMMultiPassStorageRef storage)
+{
+	glob->params.rc.b_stat_read = (pass_mode_flags & kICMCompressionPassMode_ReadFromMultiPassStorage) ? TRUE : FALSE;
+	glob->params.rc.b_stat_write = (pass_mode_flags & kICMCompressionPassMode_WriteToMultiPassStorage) ? TRUE : FALSE;
+	glob->emit_frames = (pass_mode_flags & kICMCompressionPassMode_OutputEncodedFrames) ? TRUE : FALSE;
+	
+	return noErr;
+}
+
+ComponentResult x264_compressor_EndPass(x264_compressor_globals_t *glob)
+{	
+	if (glob->encoder) {
+		x264_encoder_close(glob->encoder);
+    	glob->encoder = NULL;
+	}
+	return noErr;
+}
+
+ComponentResult x264_compressor_ProcessBetweenPasses(x264_compressor_globals_t *glob, ICMMultiPassStorageRef storage, Boolean *done, ICMCompressionPassModeFlags *flags)
+{	
+	if (glob->params.rc.b_stat_write)  {
+		*flags = kICMCompressionPassMode_ReadFromMultiPassStorage | kICMCompressionPassMode_OutputEncodedFrames;
+	} else {
+		*flags = kICMCompressionPassMode_WriteToMultiPassStorage;
+	}
+	
+	*done = TRUE;
+	return noErr;
 }

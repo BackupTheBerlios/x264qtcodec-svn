@@ -83,7 +83,7 @@
 		ComponentCall (PrepareToCompressFrames)					// 55
 		ComponentCall (EncodeFrame)
 		ComponentCall (CompleteFrame)
- 		ComponentDelegate (BeginPass)
- 		ComponentDelegate (EndPass)
-		ComponentDelegate (ProcessBetweenPasses)					// 60
+ 		ComponentCall (BeginPass)
+ 		ComponentCall (EndPass)
+		ComponentCall (ProcessBetweenPasses)					// 60
 	ComponentRangeEnd (1)
