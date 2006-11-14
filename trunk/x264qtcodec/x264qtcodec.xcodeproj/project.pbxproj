@@ -37,7 +37,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 089C1669FE841209C02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 614C582D0B082DA50039446B /* libx264 */;
+			remoteGlobalIDString = 614C582D0B082DA50039446B;
 			remoteInfo = libx264;
 		};
 /* End PBXContainerItemProxy section */

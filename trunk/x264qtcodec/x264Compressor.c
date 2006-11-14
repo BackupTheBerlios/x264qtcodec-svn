@@ -171,6 +171,34 @@ static void x264_compress_log(void *blah, int i_level, const char *psz, va_list 
 	/* we really don't care */
 }
 
+static ComponentResult release_source_frame_for_encoded(x264_compressor_globals_t *glob, x264_picture_t *picture)
+{
+	// find the source frame that matches the "outputted" frame
+	int count = CFArrayGetCount(glob->source_frame_queue);
+	int i;
+	ICMCompressorSourceFrameRef CF_value = NULL;
+	ICMCompressorSourceFrameRef CF_value_temp = NULL;
+	
+	for (i = 0; i < count; i++) {
+		TimeValue64 displayTimeStamp, displayDuration;
+		TimeScale timeScale;
+		CF_value_temp = (ICMCompressorSourceFrameRef)CFArrayGetValueAtIndex(glob->source_frame_queue, i);
+		ICMCompressorSourceFrameGetDisplayTimeStampAndDuration(CF_value_temp, &displayTimeStamp, &displayDuration, &timeScale, NULL);
+
+		if (displayTimeStamp == picture->i_pts) {
+			CF_value = CF_value_temp;
+			CFArrayRemoveValueAtIndex(glob->source_frame_queue, i);
+			break;
+		}
+	}
+	
+	// if we can't find a matching frame, what should we do?
+	if (CF_value == NULL) return 0;
+	
+	ICMCompressorSourceFrameRelease(CF_value);
+	return 0;
+}
+
 static ComponentResult emit_frame_from_nal(x264_compressor_globals_t *glob, x264_nal_t *nal, unsigned int nal_count, x264_picture_t *picture)
 {
     ComponentResult err = noErr;    
@@ -948,6 +976,8 @@ ComponentResult x264_compressor_EncodeFrame(x264_compressor_globals_t *glob, ICM
 	if ((glob->emit_frames) && (nal_count)) {
 		err = emit_frame_from_nal(glob, nal, nal_count, &picture_out);
 		if (err) return err;
+	} else if (nal_count) {
+		release_source_frame_for_encoded(glob, &picture_out);
 	}
 	
 	return err;
