@@ -683,9 +683,9 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
 	glob->params.rc.i_bitrate = (data_rate * 8) / 1024; 
 	
 	if (glob->params.rc.i_bitrate > 0)
-		glob->params.rc.b_cbr = TRUE;
+		glob->params.rc.i_rc_method = X264_RC_ABR;
 	else 
-		glob->params.rc.b_cbr = FALSE;
+		glob->params.rc.i_rc_method = X264_RC_CQP;
 
 	glob->params.pf_log = x264_compress_log;
 	
