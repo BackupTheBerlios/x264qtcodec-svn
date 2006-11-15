@@ -684,6 +684,9 @@ ComponentResult x264_compressor_PrepareToCompressFrames(x264_compressor_globals_
     glob->params.i_width = (*image_description)->width;
     glob->params.i_height = (*image_description)->height;
 	glob->params.i_keyint_max = ICMCompressionSessionOptionsGetMaxKeyFrameInterval(glob->session_options);
+	if (!glob->params.i_keyint_max)
+		glob->params.i_keyint_max = 150;        // arbitrary; this is seems to be the value that Apple's H.264 encoder uses for automatic
+		                                        // x264 defaults to 1 if it's unspecified
 	
 	err = ICMCompressionSessionOptionsGetProperty(glob->session_options, 
                                                   kQTPropertyClass_ICMCompressionSessionOptions,
