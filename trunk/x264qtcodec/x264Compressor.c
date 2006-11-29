@@ -49,7 +49,7 @@ typedef struct x264_compressor_globals_struct
 
 #define STAT_FILE_PATH_BUFFER_SIZE  1024
 
-#define X264_COMPRESSOR_VERSION 	(0x00050000 + X264_BUILD)
+#define X264_COMPRESSOR_VERSION 	(0x00060000 + X264_BUILD)
 #define X264_COMPRESSOR_FLAGS (codecInfoDoes32 | codecInfoDoesMultiPass | codecInfoDoesTemporal | codecInfoDoesReorder | codecInfoDoesRateConstrain)
 #define X264_COMPRESSOR_FORMAT_FLAGS (codecInfoSequenceSensitive | codecInfoDepth24)
 

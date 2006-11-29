@@ -90,7 +90,7 @@ resource 'thng' (258) {
 	258,									// Info ID
 	0,										// Icon Type
 	0,										// Icon ID
-	0x00050000,								// Version
+	0x00060000,								// Version
 	componentHasMultiplePlatforms +			// Registration Flags 
 		componentDoAutoVersion,
 	0,										// Resource ID of Icon Family
